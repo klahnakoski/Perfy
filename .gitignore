@@ -1,6 +1,5 @@
 *.pyc
 *.log
-*settings.json
 out
 results/*
 tests/results/*

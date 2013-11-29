@@ -1,0 +1,33 @@
+{
+		"source":{
+			"host":"http://klahnakoski-es.corp.tor1.mozilla.com",
+			"port":"9200",
+			"index":"perfy131127_000000",
+			"type":"scores",
+			"debug":true
+		},
+		"destination":{
+			"host":"http://elasticsearch7.metrics.scl3.mozilla.com",
+			"port":"9200",
+			"index":"perfy131127_000000",
+			"type":"scores",
+			"schema_filename":"./resources/perfy_schema.json"
+		},
+		"param":{
+			"last_replication_time":"./results/data/last_replication_time.txt"
+		},
+		"debug":{
+			"log":[{
+				"class": "logging.handlers.RotatingFileHandler",
+				"filename": "./results/logs/replication.log",
+				"maxBytes": 10000000,
+				"backupCount": 200,
+				"encoding": "utf8"
+			},{
+				"class":"perfy.util.logs.Log_usingStream",
+				"stream":"sys.stdout"
+			}]
+	}
+
+
+}
