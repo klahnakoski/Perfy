@@ -37,7 +37,7 @@ def get_last_updated(es):
                 "query": {"match_all": {}},
                 "filter": {
                     "range": {
-                        "modified_ts": {"gte": CNV.datetime2milli(far_back)}}}
+                    "modified_ts": {"gte": CNV.datetime2milli(far_back)}}}
             }},
             "from": 0,
             "size": 0,
@@ -49,10 +49,11 @@ def get_last_updated(es):
             return datetime.min
         return CNV.milli2datetime(results.facets["0"].max)
     except Exception, e:
-        Log.error("Can not get_last_updated from {{host}}/{{index}}", {
+        Log.error("Can not get_last_updated from {{host}}/{{index}}",{
             "host": es.settings.host,
             "index": es.settings.index
         }, e)
+
 
 
 # USE THE source TO GET THE INDEX SCHEMA
@@ -82,45 +83,10 @@ def get_or_create_index(destination_settings, source):
 
 
 def get_pending(es, id_field_name, esfilter):
-    pending = Multiset()
-    filter_total = []
-
-    #SPLIT BY PREFIX
-    for i in range(0, 16):
-        prefix = {"prefix": {id_field_name: CNV.int2hex(i, 1)}}
-        filter_total.append(prefix)
-
-        result = es.search({
-            "query": {"filtered": {
-                "query": {"match_all": {}},
-                "filter": {"and": [
-                    esfilter,
-                    prefix
-                ]}
-            }},
-            "from": 0,
-            "size": 0,
-            "sort": [],
-            "facets": {"default": {"terms": {"field": id_field_name, "size": 200000}}}
-        })
-
-        if len(result.facets.default.terms) >= 200000:
-            Log.error("Can not handle more than 200K bugs changed")
-
-        pending |= Multiset(
-            result.facets.default.terms,
-            key_field="term",
-            count_field="count"
-        )
-
-    #ALL OTHERS
     result = es.search({
         "query": {"filtered": {
             "query": {"match_all": {}},
-            "filter": {"and": [
-                esfilter,
-                {"not": {"and": filter_total}}
-            ]}
+            "filter": esfilter
         }},
         "from": 0,
         "size": 0,
@@ -131,12 +97,11 @@ def get_pending(es, id_field_name, esfilter):
     if len(result.facets.default.terms) >= 200000:
         Log.error("Can not handle more than 200K bugs changed")
 
-    pending |= Multiset(
+    pending = Multiset(
         result.facets.default.terms,
         key_field="term",
         count_field="count"
     )
-
     Log.note("Source has {{num}} records for updating", {
         "num": len(pending)
     })
@@ -163,7 +128,7 @@ def replicate(source, destination, pending, id_field_name, esfilter):
             })
 
             d2 = map(
-                lambda (x): {"id": x.id, "value": x},
+                lambda(x): {"id": x.id, "value": x},
                 (transform(x._source) for x in data.hits.hits)
             )
             destination.add(d2)
@@ -174,12 +139,13 @@ def main(settings):
     source = ElasticSearch(settings.source)
     destination = get_or_create_index(settings["destination"], source)
 
-    id_field_name = "id"
+    id_field_name = "info.started"
     esfilter = {"script": {"script": "true"}}
 
     pending = get_pending(source, id_field_name, esfilter)
     replicate(source, destination, pending, id_field_name, esfilter)
     Log.note("Done")
+
 
 
 def start():
