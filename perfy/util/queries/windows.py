@@ -8,10 +8,14 @@
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
 
-from ..logs import Log
-from ..maths import Math
-from ..multiset import Multiset
-from ..stats import Z_moment, stats2z_moment, z_moment2stats
+from __future__ import unicode_literals
+import functools
+from ..math import stats
+from ..env.logs import Log
+from ..math.maths import Math
+from ..collections.multiset import Multiset
+from ..math.stats import Z_moment, stats2z_moment, z_moment2stats
+
 
 class AggregationFunction(object):
     def __init__(self):
@@ -39,8 +43,25 @@ class AggregationFunction(object):
         """
 
 
-class WindowFunction(AggregationFunction):
+class Exists(AggregationFunction):
+    def __init__(self):
+        object.__init__(self)
+        self.total = False
 
+    def add(self, value):
+        if value == None:
+            return
+        self.total = True
+
+    def merge(self, agg):
+        if agg.total:
+            self.total = True
+
+    def end(self):
+        return self.total
+
+
+class WindowFunction(AggregationFunction):
     def __init__(self):
         """
         RETURN A ZERO-STATE AGGREGATE
@@ -55,27 +76,66 @@ class WindowFunction(AggregationFunction):
         Log.error("not implemented yet")
 
 
+def Stats(**kwargs):
+    if not kwargs:
+        return _SimpleStats
+    else:
+        return functools.partial(_Stats, *[], **kwargs)
 
 
-class Stats(WindowFunction):
+class _Stats(WindowFunction):
+    """
+    TRACK STATS, BUT IGNORE OUTLIERS
+    """
 
-    def __init__(self):
+    def __init__(self, middle=None):
         object.__init__(self)
-        self.total=Z_moment(0,0,0)
-
+        self.middle = middle
+        self.samples = []
 
     def add(self, value):
         if value == None:
             return
-        self.total+=stats2z_moment(value)
+        self.samples.append(value)
 
     def sub(self, value):
         if value == None:
             return
-        self.total-=stats2z_moment(value)
+        self.samples.remove(value)
 
     def merge(self, agg):
-        self.total+=agg.total
+        Log.error("Do not know how to handle")
+
+    def end(self):
+        ignore = Math.ceiling(len(self.samples) * (1 - self.middle) / 2)
+        if ignore * 2 >= len(self.samples):
+            return stats.Stats()
+        output = stats.Stats(samples=sorted(self.samples)[ignore:len(self.samples) - ignore:])
+        output.samples = list(self.samples)
+        return output
+
+
+class _SimpleStats(WindowFunction):
+    """
+    AGGREGATE Stats OBJECTS, NOT JUST VALUES
+    """
+
+    def __init__(self):
+        object.__init__(self)
+        self.total = Z_moment(0, 0, 0)
+
+    def add(self, value):
+        if value == None:
+            return
+        self.total += stats2z_moment(value)
+
+    def sub(self, value):
+        if value == None:
+            return
+        self.total -= stats2z_moment(value)
+
+    def merge(self, agg):
+        self.total += agg.total
 
     def end(self):
         return z_moment2stats(self.total)
@@ -89,6 +149,7 @@ class Min(WindowFunction):
 
     def add(self, value):
         if value == None:
+
             return
         self.total.add(value)
 
@@ -118,7 +179,7 @@ class Max(WindowFunction):
         self.total.remove(value)
 
     def end(self):
-        return Math.max(self.total)
+        return Math.max(*self.total)
 
 
 class Count(WindowFunction):
@@ -142,7 +203,6 @@ class Count(WindowFunction):
 
 
 class Sum(WindowFunction):
-
     def __init__(self):
         object.__init__(self)
         self.total = 0

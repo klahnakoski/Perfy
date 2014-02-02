@@ -12,12 +12,12 @@
 from datetime import datetime, timedelta
 from perfy.util.timer import Timer
 from perfy.util.cnv import CNV
-from perfy.util.logs import Log
+from perfy.util.env.logs import Log
 from perfy.util.queries import Q
-from perfy.util import startup
-from perfy.util.files import File
-from perfy.util.multiset import Multiset
-from perfy.util.elasticsearch import ElasticSearch
+from perfy.util.env import startup
+from perfy.util.env.files import File
+from perfy.util.collections.multiset import Multiset
+from perfy.util.env.elasticsearch import ElasticSearch
 
 
 far_back = datetime.utcnow() - timedelta(weeks=52)

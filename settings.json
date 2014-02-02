@@ -24,7 +24,7 @@
 				"backupCount": 200,
 				"encoding": "utf8"
 			},{
-				"class":"perfy.util.logs.Log_usingStream",
+				"class":"perfy.util.env.logs.Log_usingStream",
 				"stream":"sys.stdout"
 			}]
 	}
