@@ -30,7 +30,8 @@ def get_or_create_index(destination_settings):
 
     indexes = [a for a in aliases if a.alias == destination_settings.index or a.index == destination_settings.index]
     if not indexes:
-        Log.error("Expecting index to exist already")
+        schema = CNV.JSON2object(File(destination_settings.schema_filename).read())
+        return ElasticSearch.create_index(destination_settings, schema)
     elif len(indexes) > 1:
         Log.error("do not know how to replicate to more than one index")
     elif indexes[0].alias != None:

@@ -7,9 +7,9 @@
 			"debug":true
 		},
 		"destination":{
-			"host":"http://elasticsearch7.metrics.scl3.mozilla.com",
+			"host":"http://elasticsearch6.bugs.scl3.mozilla.com",
 			"port":"9200",
-			"index":"perfy131127_000000",
+			"index":"perfy140313_000000",
 			"type":"scores",
 			"schema_filename":"./resources/perfy_schema.json"
 		},

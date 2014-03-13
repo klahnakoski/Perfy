@@ -9,13 +9,11 @@
 #
 
 
-
-import codecs
 from datetime import datetime
 import io
 import os
 import shutil
-from ..math import crypto
+from ..maths import crypto
 from ..struct import listwrap, nvl
 from ..cnv import CNV
 
@@ -167,6 +165,21 @@ class File(object):
 
     @property
     def exists(self):
+        if self._filename in ["", "."]:
+            return True
+        try:
+            return os.path.exists(self._filename)
+        except Exception, e:
+            return False
+
+    def __bool__(self):
+        return self.__nonzero__()
+
+
+    def __nonzero__(self):
+        """
+        USED FOR FILE EXISTENCE TESTING
+        """
         if self._filename in ["", "."]:
             return True
         try:
